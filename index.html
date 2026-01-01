@@ -175,7 +175,7 @@
         /* Results Styling */
         .result-screen {
             text-align: center;
-            display: none;
+            /* FIXED: Removed display: none from here so it doesn't override JS toggles */
         }
 
         .score-display {
@@ -268,7 +268,7 @@
         </div>
     </div>
 
-    <div id="step-result" class="result-screen">
+    <div id="step-result" class="result-screen hidden">
         <div class="subtitle">FINAL PROBABILITY</div>
         <span class="score-display" id="final-score">0%</span>
         
@@ -382,9 +382,6 @@
 
     function handleAnswer(val) {
         currentScore += val;
-        
-        // Cap score logic during quiz (optional, but let's keep it raw until the end)
-        
         currentQuestionIndex++;
         
         // Tiny flicker effect between questions
@@ -422,9 +419,15 @@
         }, 50);
     }
 
+    // --- FIXED FUNCTION BELOW ---
     function showResults() {
+        // 1. Hide the loading screen strictly
         loadingEl.classList.add('hidden');
+        loadingEl.style.display = 'none'; // Force hide
+
+        // 2. Show the result screen strictly
         resultEl.classList.remove('hidden');
+        resultEl.style.display = 'block'; // Force show
         resultEl.classList.add('fade-in');
 
         const scoreDisplay = document.getElementById('final-score');
@@ -443,6 +446,8 @@
 
             if (displayScore >= currentScore) {
                 clearInterval(scoreInterval);
+                // Ensure the final number matches exactly
+                scoreDisplay.innerText = currentScore + '%';
                 renderFinalMessage(currentScore, msgBox);
             }
         }, 20);
