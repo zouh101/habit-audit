@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 HABIT PROBABILITY CALCULATOR</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --terminal-green: #33ff00;
+            --warning-yellow: #FFD700;
+            --alert-red: #FF0000;
+            --dim-gray: #333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--warning-yellow);
+            font-family: 'Courier New', Courier, monospace;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            text-transform: uppercase;
+        }
+
+        /* CRT Scanline Effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            border: 2px solid var(--warning-yellow);
+            padding: 2rem;
+            position: relative;
+            background: #000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Header / Progress */
+        header {
+            border-bottom: 1px solid var(--dim-gray);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-light {
+            width: 12px;
+            height: 12px;
+            background-color: var(--warning-yellow);
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+            color: #fff;
+        }
+
+        p {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #ccc;
+            margin-bottom: 1.5rem;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--warning-yellow);
+            border: 1px solid var(--warning-yellow);
+            padding: 0.2rem 0.5rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+
+        /* Buttons */
+        .btn-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--warning-yellow);
+            color: var(--warning-yellow);
+            padding: 1rem;
+            font-family: inherit;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background: var(--warning-yellow);
+            color: #000;
+            box-shadow: 0 0 15px var(--warning-yellow);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.cta-btn {
+            background: var(--alert-red);
+            border: none;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+            animation: pulse 2s infinite;
+        }
+        
+        button.cta-btn:hover {
+            background: #ff4444;
+            color: #fff;
+            box-shadow: 0 0 20px var(--alert-red);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+        }
+
+        /* Results Styling */
+        .result-screen {
+            text-align: center;
+            display: none;
+        }
+
+        .score-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            display: block;
+        }
+
+        .failure-msg {
+            color: var(--alert-red);
+            border: 1px solid var(--alert-red);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+        
+        .success-msg {
+            color: var(--terminal-green);
+            border: 1px solid var(--terminal-green);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            font-weight: bold;
+        }
+
+        /* Utility classes for JS toggling */
+        .hidden {
+            display: none !important;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Bar */
+        .loader {
+            width: 100%;
+            height: 20px;
+            border: 1px solid var(--warning-yellow);
+            margin-top: 2rem;
+            position: relative;
+        }
+
+        .loader-fill {
+            height: 100%;
+            background: var(--warning-yellow);
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+
+<div class="container">
+    <header>
+        <span id="system-status">SYSTEM READY</span>
+        <div class="status-light"></div>
+    </header>
+
+    <div id="step-intro" class="fade-in">
+        <h1>2026 HABIT PROBABILITY<br>CALCULATOR</h1>
+        <div style="text-align: center; margin: 2rem 0;">
+            <p>Most New Year's resolutions fail by February 15th.</p>
+            <p>Your current system is likely flawed.</p>
+            <p>Let's calculate your actual odds of survival.</p>
+        </div>
+        <button onclick="startApp()" style="width: 100%; text-align: center;">INITIALIZE DIAGNOSTIC</button>
+    </div>
+
+    <div id="step-quiz" class="hidden">
+        <div class="subtitle" id="question-counter">SEQ 01/06</div>
+        <h2 id="question-text">Loading...</h2>
+        <div class="btn-grid" id="options-container">
+            </div>
+    </div>
+
+    <div id="step-loading" class="hidden" style="text-align: center;">
+        <h2>ANALYZING BEHAVIORAL ARCHITECTURE...</h2>
+        <p id="loading-text">CALCULATING FAILURE POINTS</p>
+        <div class="loader">
+            <div class="loader-fill" id="loader-fill"></div>
+        </div>
+    </div>
+
+    <div id="step-result" class="result-screen">
+        <div class="subtitle">FINAL PROBABILITY</div>
+        <span class="score-display" id="final-score">0%</span>
+        
+        <div id="result-message-box">
+            </div>
+
+        <p style="font-size: 0.8rem; margin-top: 1rem;">YOUR SYSTEM IS COMPROMISED.</p>
+        
+        <button class="cta-btn" onclick="window.open('https://payhip.com/b/w3FRz', '_blank')">
+            DOWNLOAD THE REPAIR KIT ($9.99)
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    let currentScore = 50;
+    let currentQuestionIndex = 0;
+
+    const questions = [
+        {
+            text: "Is your new habit based on an Outcome (e.g., 'Lose 20lbs') or Identity (e.g., 'Be an athlete')?",
+            options: [
+                { label: "OUTCOME ('Lose 20lbs')", value: -20 },
+                { label: "IDENTITY ('Be an athlete')", value: 20 }
+            ]
+        },
+        {
+            text: "If you are tired, stressed, or busy, do you have a 'reduced scope' version ready (e.g., 2 mins instead of 30)?",
+            options: [
+                { label: "NO. I GO HARD OR GO HOME.", value: -30 },
+                { label: "YES. I HAVE A BACKUP PLAN.", value: 15 }
+            ]
+        },
+        {
+            text: "Do the 5 people you spend the most time with already exhibit this habit?",
+            options: [
+                { label: "NO. I AM THE ONLY ONE.", value: -20 },
+                { label: "YES. IT IS NORMAL FOR THEM.", value: 30 }
+            ]
+        },
+        {
+            text: "Are you relying on 'feeling motivated' to get started every day?",
+            options: [
+                { label: "YES. I NEED TO FEEL READY.", value: -40 }, // Critical failure
+                { label: "NO. IT IS AUTOMATED/SCHEDULED.", value: 10 }
+            ]
+        },
+        {
+            text: "Is your physical environment explicitly designed to make the habit obvious and the bad habit invisible?",
+            options: [
+                { label: "NO.", value: -10 },
+                { label: "YES.", value: 10 }
+            ]
+        },
+        {
+            text: "Do you have a specific plan for exactly how you will recover when (not if) you miss a day?",
+            options: [
+                { label: "NO. I WON'T MISS.", value: -15 },
+                { label: "YES. I KNOW THE RECOVERY PROTOCOL.", value: 15 }
+            ]
+        }
+    ];
+
+    // --- DOM ELEMENTS ---
+    const introEl = document.getElementById('step-intro');
+    const quizEl = document.getElementById('step-quiz');
+    const loadingEl = document.getElementById('step-loading');
+    const resultEl = document.getElementById('step-result');
+    
+    const qTextEl = document.getElementById('question-text');
+    const qCountEl = document.getElementById('question-counter');
+    const optionsContainer = document.getElementById('options-container');
+    
+    const loaderFill = document.getElementById('loader-fill');
+    const loadingText = document.getElementById('loading-text');
+
+    // --- FUNCTIONS ---
+
+    function startApp() {
+        introEl.classList.add('hidden');
+        quizEl.classList.remove('hidden');
+        quizEl.classList.add('fade-in');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        if (currentQuestionIndex >= questions.length) {
+            finishQuiz();
+            return;
+        }
+
+        const q = questions[currentQuestionIndex];
+        
+        // Update Text
+        qCountEl.innerText = `SEQ 0${currentQuestionIndex + 1}/06`;
+        qTextEl.innerText = q.text;
+        
+        // Clear old buttons
+        optionsContainer.innerHTML = '';
+
+        // Create new buttons
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerText = `> ${opt.label}`;
+            btn.onclick = () => handleAnswer(opt.value);
+            optionsContainer.appendChild(btn);
+        });
+    }
+
+    function handleAnswer(val) {
+        currentScore += val;
+        
+        // Cap score logic during quiz (optional, but let's keep it raw until the end)
+        
+        currentQuestionIndex++;
+        
+        // Tiny flicker effect between questions
+        quizEl.style.opacity = '0';
+        setTimeout(() => {
+            renderQuestion();
+            quizEl.style.opacity = '1';
+        }, 200);
+    }
+
+    function finishQuiz() {
+        // Cap Score Logic
+        if (currentScore > 99) currentScore = 99;
+        if (currentScore < 1) currentScore = 1;
+
+        quizEl.classList.add('hidden');
+        loadingEl.classList.remove('hidden');
+        
+        // Fake Loading Sequence
+        let width = 0;
+        const interval = setInterval(() => {
+            width += Math.random() * 5;
+            if (width > 100) width = 100;
+            loaderFill.style.width = width + '%';
+            
+            // Random loading text
+            if (width > 30 && width < 32) loadingText.innerText = "DETECTING WILLPOWER DEPENDENCY...";
+            if (width > 60 && width < 62) loadingText.innerText = "SIMULATING FEBRUARY 15TH...";
+            if (width > 90 && width < 92) loadingText.innerText = "COMPILING TRAJECTORY...";
+
+            if (width === 100) {
+                clearInterval(interval);
+                setTimeout(showResults, 500);
+            }
+        }, 50);
+    }
+
+    function showResults() {
+        loadingEl.classList.add('hidden');
+        resultEl.classList.remove('hidden');
+        resultEl.classList.add('fade-in');
+
+        const scoreDisplay = document.getElementById('final-score');
+        const msgBox = document.getElementById('result-message-box');
+        
+        // Animate Score Counter
+        let displayScore = 0;
+        const scoreInterval = setInterval(() => {
+            displayScore++;
+            scoreDisplay.innerText = displayScore + '%';
+            
+            // Color grading logic
+            if(displayScore < 40) scoreDisplay.style.color = "var(--alert-red)";
+            else if(displayScore < 60) scoreDisplay.style.color = "var(--warning-yellow)";
+            else scoreDisplay.style.color = "var(--terminal-green)";
+
+            if (displayScore >= currentScore) {
+                clearInterval(scoreInterval);
+                renderFinalMessage(currentScore, msgBox);
+            }
+        }, 20);
+    }
+
+    function renderFinalMessage(score, container) {
+        if (score < 60) {
+            container.innerHTML = `
+                <div class="failure-msg">
+                    ⚠️ SYSTEM FAILURE IMMINENT ⚠️<br><br>
+                    YOU ARE RELYING ON WILLPOWER.<br>
+                    BASED ON THIS ARCHITECTURE, YOU WILL QUIT BY FEB 15.
+                </div>
+            `;
+            document.getElementById('system-status').innerText = "SYSTEM: CRITICAL";
+            document.getElementById('system-status').style.color = "var(--alert-red)";
+        } else {
+            container.innerHTML = `
+                <div class="success-msg">
+                    MODERATE CHANCE DETECTED.<br><br>
+                    STRUCTURE IS STABLE BUT BRITTLE.<br>
+                    OPTIMIZATION REQUIRED FOR LONG-TERM SURVIVAL.
+                </div>
+            `;
+            document.getElementById('system-status').innerText = "SYSTEM: UNSTABLE";
+        }
+    }
+</script>
+
+</body>
+</html>
